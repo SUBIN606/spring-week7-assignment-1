@@ -3,6 +3,7 @@ package com.codesoom.assignment.application.auth;
 import com.codesoom.assignment.exceptions.UserNotFoundException;
 import com.codesoom.assignment.exceptions.InvalidPasswordException;
 
+
 /**
  * 회원 인증을 담당합니다.
  */

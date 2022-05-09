@@ -1,8 +1,11 @@
 package com.codesoom.assignment.controller.products;
 
+import com.codesoom.assignment.TokenGenerator;
 import com.codesoom.assignment.controller.ControllerTest;
 import com.codesoom.assignment.domain.products.ProductDto;
 import com.codesoom.assignment.domain.products.ProductRepository;
+import com.codesoom.assignment.domain.users.User;
+import com.codesoom.assignment.domain.users.UserRepository;
 import com.codesoom.assignment.utils.JwtUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.AfterEach;
@@ -13,6 +16,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.math.BigDecimal;
@@ -27,8 +31,17 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @DisplayName("ProductSaveController 클래스")
 public class ProductSaveControllerMockMvcTest extends ControllerTest {
 
+    private final String EMAIL = "kimcs@codesoom.com";
+    private final String PASSWORD = "rlacjftn098";
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
     @Autowired
     private MockMvc mockMvc;
+
+    @Autowired
+    private UserRepository userRepository;
 
     @Autowired
     private ProductRepository repository;
@@ -36,19 +49,24 @@ public class ProductSaveControllerMockMvcTest extends ControllerTest {
     @Autowired
     private ObjectMapper objectMapper;
 
-    @Autowired
-    private JwtUtil jwtUtil;
     private static final String TOKEN_PREFIX = "Bearer ";
-    private String TOKEN;
 
     @BeforeEach
-    void setup() throws Exception {
-        this.TOKEN = jwtUtil.encode(1L);
+    void setup() {
+        cleanup();
     }
 
     @AfterEach
     void cleanup() {
+        userRepository.deleteAll();
         repository.deleteAll();
+    }
+
+    User saveUser() {
+        User user = User.of("김철수", EMAIL);
+        user.changePassword(PASSWORD, passwordEncoder);
+
+        return userRepository.save(user);
     }
 
     @DisplayName("saveProduct 메서드는")
@@ -61,6 +79,13 @@ public class ProductSaveControllerMockMvcTest extends ControllerTest {
 
             private final ProductDto VALID_PRODUCT_DTO
                     = new ProductDto("어쩌구", "어쩌구컴퍼니", BigDecimal.valueOf(2000), "url");
+            private String TOKEN;
+
+            @BeforeEach
+            void setup() throws Exception {
+                saveUser();
+                this.TOKEN = TokenGenerator.generateToken(mockMvc, EMAIL, PASSWORD);
+            }
 
             @AfterEach
             void cleanup() {
@@ -85,7 +110,13 @@ public class ProductSaveControllerMockMvcTest extends ControllerTest {
 
             private final ProductDto INVALID_PRODUCT_DTO
                     = new ProductDto("어쩌구", " ", BigDecimal.valueOf(2000), "url");
+            private String TOKEN;
 
+            @BeforeEach
+            void setup() throws Exception {
+                saveUser();
+                this.TOKEN = TokenGenerator.generateToken(mockMvc, EMAIL, PASSWORD);
+            }
             @DisplayName("400 bad request를 응답한다.")
             @Test
             void it_reponse_400_bad_request() throws Exception {

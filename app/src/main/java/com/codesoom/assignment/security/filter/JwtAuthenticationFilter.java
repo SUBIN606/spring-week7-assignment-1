@@ -1,6 +1,7 @@
 package com.codesoom.assignment.security.filter;
 
 import com.codesoom.assignment.application.auth.AuthorizationService;
+import com.codesoom.assignment.domain.users.Role;
 import com.codesoom.assignment.security.UserAuthentication;
 import com.codesoom.assignment.exceptions.InvalidTokenException;
 import org.apache.logging.log4j.util.Strings;
@@ -17,6 +18,7 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.List;
 
 /**
  *  요청 헤더에 포함된 토큰 검증을 담당합니다.
@@ -40,9 +42,10 @@ public class JwtAuthenticationFilter extends BasicAuthenticationFilter {
         if (request.getHeader(HttpHeaders.AUTHORIZATION) != null) {
             String accessToken = getAccessToken(request);
             Long userId = authorizationService.parseToken(accessToken);
+            List<Role> roles = authorizationService.roles(userId);
 
             SecurityContext context = SecurityContextHolder.getContext();
-            Authentication authentication = new UserAuthentication(userId);
+            Authentication authentication = new UserAuthentication(userId, roles);
             context.setAuthentication(authentication);
         }
 

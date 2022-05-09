@@ -3,11 +3,17 @@ package com.codesoom.assignment.domain.users;
 import org.hibernate.annotations.ColumnDefault;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.OneToMany;
+import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.List;
 
 
 @Entity
@@ -29,16 +35,28 @@ public class User {
     @Column(insertable = false)
     private Boolean deleted = Boolean.FALSE;
 
+    @Column(insertable = false)
+    private LocalDateTime deletedAt;
+
+    @OneToMany(cascade = {CascadeType.ALL})
+    @JoinColumn(name = "USER_ID")
+    private List<Role> roles;
+
     protected User() {
     }
 
-    private User(String name, String email) {
+    private User(String name, String email, List<Role> roles) {
         this.name = name;
         this.email = email;
+        this.roles = roles;
     }
 
     public static User of(String name, String email) {
-        return new User(name, email);
+        return new User(name, email, Arrays.asList(new Role(UserRole.USER)));
+    }
+
+    public static User of(String name, String email, List<Role> roles) {
+        return new User(name, email, roles);
     }
 
     public User(Long id, String name, String email, String password) {
@@ -71,6 +89,7 @@ public class User {
     /** 이 회원을 삭제 상태로 변경하고, 변경된 회원을 리턴합니다. */
     public User destroy() {
         this.deleted = Boolean.TRUE;
+        this.deletedAt = LocalDateTime.now();
         return this;
     }
 

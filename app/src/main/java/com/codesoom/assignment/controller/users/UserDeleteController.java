@@ -25,7 +25,7 @@ public class UserDeleteController {
      *
      * @param id 회원 식별자
      */
-    @PreAuthorize("#id == authentication.principal")
+    @PreAuthorize("isAuthenticated() and hasAuthority('ADMIN')")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @DeleteMapping("/{id}")
     public void deleteUser(@PathVariable Long id) {

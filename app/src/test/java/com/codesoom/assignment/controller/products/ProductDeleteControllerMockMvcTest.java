@@ -1,16 +1,21 @@
 package com.codesoom.assignment.controller.products;
 
+import com.codesoom.assignment.TokenGenerator;
 import com.codesoom.assignment.controller.ControllerTest;
 import com.codesoom.assignment.domain.products.Product;
 import com.codesoom.assignment.domain.products.ProductRepository;
+import com.codesoom.assignment.domain.users.User;
+import com.codesoom.assignment.domain.users.UserRepository;
 import com.codesoom.assignment.utils.JwtUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.math.BigDecimal;
@@ -23,8 +28,17 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @DisplayName("ProductDeleteController 클래스")
 public class ProductDeleteControllerMockMvcTest extends ControllerTest {
 
+    private final String EMAIL = "kimcs@codesoom.com";
+    private final String PASSWORD = "rlacjftn098";
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
     @Autowired
     private MockMvc mockMvc;
+
+    @Autowired
+    private UserRepository userRepository;
 
     @Autowired
     private ProductRepository repository;
@@ -32,14 +46,24 @@ public class ProductDeleteControllerMockMvcTest extends ControllerTest {
     @Autowired
     private ObjectMapper objectMapper;
 
-    @Autowired
-    private JwtUtil jwtUtil;
     private static final String TOKEN_PREFIX = "Bearer ";
-    private String TOKEN;
 
     @BeforeEach
     void setup() {
-        this.TOKEN = jwtUtil.encode(1L);
+        cleanup();
+    }
+
+    @AfterEach
+    void cleanup() {
+        userRepository.deleteAll();
+        repository.deleteAll();
+    }
+
+    User saveUser() {
+        User user = User.of("김철수", EMAIL);
+        user.changePassword(PASSWORD, passwordEncoder);
+
+        return userRepository.save(user);
     }
 
     @DisplayName("delete 메서드는")
@@ -50,10 +74,13 @@ public class ProductDeleteControllerMockMvcTest extends ControllerTest {
         @Nested
         class Context_with_exist_id {
 
+            private String TOKEN;
             private Long EXIST_ID;
 
             @BeforeEach
-            void setup() {
+            void setup() throws Exception {
+                saveUser();
+                this.TOKEN = TokenGenerator.generateToken(mockMvc, EMAIL, PASSWORD);
                 final Product product
                         = Product.withoutId("쥐돌이", "캣이즈락스타", BigDecimal.valueOf(4000), "");
                 this.EXIST_ID = repository.save(product).getId();
@@ -72,10 +99,13 @@ public class ProductDeleteControllerMockMvcTest extends ControllerTest {
         @Nested
         class Context_with_not_exist_id {
 
+            private String TOKEN;
             private final Long NOT_EXIST_ID = 100L;
 
             @BeforeEach
-            void setup() {
+            void setup() throws Exception {
+                saveUser();
+                this.TOKEN = TokenGenerator.generateToken(mockMvc, EMAIL, PASSWORD);
                 if (repository.existsById(NOT_EXIST_ID)) {
                     repository.deleteById(NOT_EXIST_ID);
                 }
